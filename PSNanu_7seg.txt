@@ -1,0 +1,129 @@
+#include <Arduino.h>
+
+/*End of auto generated code by Atmel studio */
+#include<avr/io.h>
+#include<avr/interrupt.h>
+#include<util/delay.h>
+
+int i=0;
+
+void seg(int i)
+{
+if( i == 0 )
+	{
+	 PORTD   = 0xE0;
+	 PORTB   = 0x0E;
+	}
+
+if( i == 1 )
+{
+	PORTD   = 0x80;
+	PORTB   = 0x04;
+}
+
+if( i == 2 )
+{
+	PORTD   = 0xA0;
+	PORTB   = 0x0B;
+}
+
+if( i == 3 )
+{
+	PORTD   = 0xA0;
+	PORTB   = 0x0D;
+}
+
+if( i == 4 )
+{
+	PORTD   = 0xC0;
+	PORTB   = 0x05;
+}
+
+if( i == 5 )
+{
+	PORTD   = 0x60;
+	PORTB   = 0x0D;
+}
+
+if( i == 6 )
+{
+	PORTD   = 0x60;
+	PORTB   = 0x0F;
+}
+
+if( i == 7 )
+{
+	PORTD   = 0xA0;
+	PORTB   = 0x04;
+}
+
+if( i == 8 )
+{
+	PORTD   = 0xE0;
+	PORTB   = 0xFF;
+}
+
+if( i == 9 )
+{
+	PORTD   = 0xE0;
+	PORTB   = 0x3D;
+}
+}
+
+void delay_ms(int ms) {
+	while (ms--) {
+		for (volatile int n=0; n < 1400; n++); // o milisecunda
+	}
+}
+
+
+//Beginning of Auto generated function prototypes by Atmel Studio
+//End of Auto generated function prototypes by Atmel Studio
+
+void setup() {
+
+	//   DDRB = 0xFF;
+	//   DDRC = 0xFF;
+	DDRD = 0xFF;
+	DDRB = 0xDF;
+
+
+	PORTD   = 0x00;
+	PORTB   = 0x00;
+	seg(0); // afisez 0
+}
+
+void loop() {
+
+
+
+while ( PINB & (1<<PB5) ) // daca butonul e apasat
+	{
+
+	if (PINB & (1<<PB5))  // la apasare, afisez urmatoarea cifra
+		{
+		i++;
+		 if(i==10)
+			i=0;
+		 seg(i);
+		 
+		delay_ms(500);
+		}
+	else
+		seg(i);
+
+	if (PINB & (1<<PB5)) // daca dupa 500ms butonul inca e apasat
+		{
+		 delay_ms(1500); // mai astept 1.5 s
+		 if (PINB & (1<<PB5)) // daca e apasat de 2 secunde
+			{				  // afisez 0, resetez i, dau o secunda delay sa se ridice degetul de pe buton
+			seg(0);
+			i=0;
+			delay_ms(1000);
+			}
+		}
+	}
+
+}
+
+
