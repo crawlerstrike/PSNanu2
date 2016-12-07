@@ -1,0 +1,302 @@
+#include<avr/io.h>
+#include<avr/interrupt.h>
+
+volatile int sw=0,fadeon=0,fadeof=1,i=0,j=0,apasat=0,modific=0,var=0;
+volatile long contor=0,contor2=0,contor3=0,sec=0,aux=0;
+int temp=0;
+
+double procent=0;
+int adc;
+
+void delay_ms(int ms) {
+	while (ms--) {
+		for (volatile int n=0; n < 190; n++); // cateva milisecunde
+	}
+}
+
+int adc_A0()
+{
+	ADMUX = 0xF0;// start conversie
+	ADCSRA |= (1<<6);
+	while(ADCSRA & (1<<6)); // se face conversia
+	return (ADC);
+}
+
+ISR(TIMER1_COMPA_vect)
+{
+	SREG|=(1<<7);
+	PORTD^=(1<<4); // toggle la led 
+}
+
+ISR(TIMER0_OVF_vect) // o incrementare la fiecare 15 us
+{
+	contor++;
+	contor2++;
+	contor3++;
+}
+
+ISR(ADC_vect)
+{
+	ADCSRA|=(1<<6); // conversie
+}
+void seg(int i) // cifrele
+{
+	if( i == 0 )
+	{
+		PORTD&=~(1<<3)&~(1<<5)&~(1<<7);
+		PORTB&=~(1<<0)&~(1<<1)&~(1<<2)&~(1<<3);
+
+		PORTD|=(1<<3)|(1<<5)|(1<<7);
+		PORTB|=(1<<1)|(1<<2)|(1<<3);
+	}
+
+	if( i == 1 )
+	{
+		PORTD&=~(1<<3)&~(1<<5)&~(1<<7);
+		PORTB&=~(1<<0)&~(1<<1)&~(1<<2)&~(1<<3);
+
+		PORTD|=(1<<3);
+		PORTB|=(1<<1);
+	}
+
+	if( i == 2 )
+	{
+		PORTD&=~(1<<3)&~(1<<5)&~(1<<7);
+		PORTB&=~(1<<0)&~(1<<1)&~(1<<2)&~(1<<3);
+
+		PORTD|=(1<<5)|(1<<7);
+		PORTB|=(1<<0)|(1<<1)|(1<<3);
+	}
+
+	if( i == 3 )
+	{
+		PORTD&=~(1<<3)&~(1<<5)&~(1<<7);
+		PORTB&=~(1<<0)&~(1<<1)&~(1<<2)&~(1<<3);
+
+		PORTD|=(1<<3)|(1<<5);
+		PORTB|=(1<<3)|(1<<1)|(1<<0);
+	}
+
+	if( i == 4 )
+	{
+		PORTD&=~(1<<3)&~(1<<5)&~(1<<7);
+		PORTB&=~(1<<0)&~(1<<1)&~(1<<2)&~(1<<3);
+
+		PORTD|=(1<<3);
+		PORTB|=(1<<0)|(1<<1)|(1<<2);
+	}
+
+	if( i == 5 )
+	{
+		PORTD&=~(1<<3)&~(1<<5)&~(1<<7);
+		PORTB&=~(1<<0)&~(1<<1)&~(1<<2)&~(1<<3);
+
+		PORTD|=(1<<3)|(1<<5);
+		PORTB|=(1<<3)|(1<<2)|(1<<0);
+	}
+
+	if( i == 6 )
+	{
+		PORTD&=~(1<<3)&~(1<<5)&~(1<<7);
+		PORTB&=~(1<<0)&~(1<<1)&~(1<<2)&~(1<<3);
+
+		PORTD|=(1<<3)|(1<<5)|(1<<7);
+		PORTB|=(1<<3)|(1<<2)|(1<<0);
+	}
+
+	if( i == 7 )
+	{
+		PORTD&=~(1<<3)&~(1<<5)&~(1<<7);
+		PORTB&=~(1<<0)&~(1<<1)&~(1<<2)&~(1<<3);
+
+		PORTD|=(1<<3);
+		PORTB|=(1<<3)|(1<<1);
+	}
+
+	if( i == 8 )
+	{
+		PORTD&=~(1<<3)&~(1<<5)&~(1<<7);
+		PORTB&=~(1<<0)&~(1<<1)&~(1<<2)&~(1<<3);
+
+		PORTD|=(1<<3)|(1<<5)|(1<<7);
+		PORTB|=(1<<0)|(1<<1)|(1<<2)|(1<<3);
+	}
+
+	if( i == 9 )
+	{
+		PORTD&=~(1<<3)&~(1<<5)&~(1<<7);
+		PORTB&=~(1<<0)&~(1<<1)&~(1<<2)&~(1<<3);
+
+		PORTD|=(1<<3)|(1<<5);
+		PORTB|=(1<<0)|(1<<1)|(1<<2)|(1<<3);
+	}
+}
+
+
+int main(void)
+{
+	// porturi iesire / intrare
+	DDRD = 0xFF;
+	DDRB = 0xDF;
+	DDRC = 0x00;
+
+	seg(0); // initial afisez 0
+
+	//////////////////// LED BLINK Timer1    ////////////////////////////
+	TCCR1B|=(1<<3); // wgm12 modul 0100 ctc cu top ocr1a
+	OCR1A=19000; // valoare pt o secunda la toggle
+	TIMSK1|=(1<<1); // are loc intreruperea la egalitate cu ocr1a
+	TCCR1B|=(1<<0)|(1<<2); // prescaler la 1024
+
+	SREG|=(1<<7); // enable intreruperi globale I bit
+	
+	////////////////////  /LED BLINK     //////////////////////////
+
+	//////////////////     PWM LED Timer0      //////////////////////////
+
+	TCCR0A|=(1<<7); // modul in care la inceput porneste pwm si la valoarea lui OC0A pe pinul D6
+	TCCR0A|=(1<<0)|(1<<1); // modul fast pwm
+	TIMSK0|=(1<<0); // overflow intr enable
+	TCCR0B|=(1<<0); // modul intrerupere fara clock
+	OCR0A=(procent/100.0)*255.0; // PWM 0 la inceput
+
+	SREG|=(1<<7);
+
+	//////////////////     /PWM LED      /////////////////////////
+
+	//////////////////     Analog Input       ///////////////////////////
+
+	ADMUX = (1<<6); // Vref=Vcc
+	ADCSRA = (1<<7)|(1<<2)|(1<<1)|(1<<0);// ADC Enable, prescaler 128
+
+	//////////////////     Analog Input       //////////////////////////
+
+	while (1)
+	{
+		//////////////////     PWM LED      //////////////////////////
+
+		OCR0A=(procent/100.0)*255.0; // calculez % pwm
+
+		if( fadeon == 0 && aux == 1 ) // aux e trigger pt o secunda
+		{
+			if( contor > 7000 ) // ~100ms
+			{
+				procent+=10;
+				if(procent>100)
+				{
+					sw=1;
+					procent=100;
+				}
+
+				if(sw==1)
+				{
+					sw=0;
+					fadeon=1;
+					fadeof=0;
+					aux=0;
+				}
+				contor=0;
+			}
+		}
+		// pauza de 1 secunda pt stat aprins si stat stins
+		if( (sec <= 10 && aux == 0 && fadeon==1 && fadeof==0) || (sec <= 10 && aux == 0 && fadeon==0 && fadeof==1) )
+		{
+			if ( contor > 7000 ) // ~100ms
+			{
+				sec++;
+				contor=0;
+			}
+		}
+		else
+		{
+			aux=1;
+			sec=0;
+		}
+
+
+		if( fadeof == 0 && aux == 1 ) // aux e trigger pt o secunda
+		{
+			if( contor > 7000 )
+			{
+				procent-=10;
+				if(procent<0)
+				{
+					sw=1;
+					procent=0;
+				}
+
+				if(sw==1)
+				{
+					sw=0;
+					fadeon=0;
+					fadeof=1;
+					aux=0;
+				}
+				contor=0;
+			}
+		}
+		//////////////////     /PWM LED      /////////////////////////
+
+		//////////////////     7 SEGMENT      ////////////////////////
+
+		if (var==0) // var e 0 cand butonul nu e apasat, deci resetez contorul
+			contor3=0;
+		var=1; // incep sa contorizez cat timp e apasat butonul
+
+		if (PINB & (1<<PB5))  // daca butonul e apasat
+		{
+
+			if( apasat==0 && modific==0 ) // daca nu au trecut ~300ms resetez contorul
+			{
+				contor2=0;
+			}
+
+			modific=1; // trigger 
+
+			if( contor2>35000 ) // daca e apsat de ~300ms, apasarea e valida
+				apasat=1;
+
+			if( contor3>180000) // daca e apasat de ~3s, fac reset la 0
+			{
+				i=-1; // il decrementez pt ca urmatorul if va afisa i+1
+				seg(0);
+				var=0; // reset la contor3
+			}
+
+			if ( apasat==1 && contor3 < 60000  ) //apasarea e valida. check-ul de contor3 e sa nu incrementeze in continuu daca e tinut apasat
+			{
+				i++;
+				if(i>9)
+					i=0;
+				seg(i);
+				apasat=0; // reset la validare
+				modific=0;// reset trigger
+			}
+		}
+		else // daca nu e apasat butonul, resetez contorul
+		{
+			var=0;
+		}
+		//////////////////     /7 SEGMENT      ///////////////////////
+
+		adc = adc_A0(0);      // read adc value at PA0
+
+		//		 seg((temp/10)%10);
+		//		 delay_ms(4000);
+
+		//		 seg(temp%10);
+		//		 delay_ms(4000);
+
+		temp=adc*0.2-6;    // 205 pasi si am considerat o eroare de 6 grade in comparatie cu alte termometre
+
+		if( temp < 40 && temp > 22 ) // daca temperatura e in parametrii, aprind led-ul, altfel il sting
+		{
+			PORTD|=(1<<2); // aprind
+		}
+		else
+		{
+			PORTD&=~(1<<2); // sting
+		}
+
+	} // de la while
+} // de la main
