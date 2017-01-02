@@ -1,0 +1,352 @@
+#include<avr/io.h>
+#include<avr/interrupt.h>
+
+volatile int sw=0,fadeon=0,fadeof=1,i=0,j=0,apasat=0,modific=0,var=0,suma=0,k=0;
+volatile long contor=0,contor2=0,contor3=0,sec=0,aux=0;
+int temp=0;
+
+double procent=0;
+uint16_t adc_result0;
+
+void delay_ms(int ms) {
+	while (ms--) {
+		for (volatile int n=0; n < 190; n++); // o milisecunda
+	}
+}
+
+
+void EEPROM_write(unsigned int uiAddress, unsigned char ucData)
+{
+	/* Wait for completion of previous write */
+	while(EECR & (1<<EEPE));
+	/* Set up address and Data Registers */
+	EEAR = uiAddress;
+	EEDR = ucData;
+	/* Write logical one to EEMPE */
+	EECR |= (1<<EEMPE);
+	/* Start eeprom write by setting EEPE */
+	EECR |= (1<<EEPE);
+}
+
+unsigned char EEPROM_read(unsigned int uiAddress)
+{
+	/* Wait for completion of previous write */
+	while(EECR & (1<<EEPE))
+	;
+	/* Set up address register */
+	EEAR = uiAddress;
+	/* Start eeprom read by writing EERE */
+	EECR |= (1<<EERE);
+	/* Return data from Data Register */
+	return EEDR;
+}
+
+
+uint16_t adc_read(uint8_t ch)
+{
+	// select the corresponding channel 0~7
+	ch &= 0b00000111;  // AND operation with 7
+	ADMUX = (ADMUX & 0xF8)|ch;
+	// start single conversion
+	// write '1' to ADSC
+	ADCSRA |= (1<<ADSC);
+	// wait for conversion to complete
+	// ADSC becomes '0' again
+	while(ADCSRA & (1<<ADSC));
+	return (ADC);
+}
+
+ISR(TIMER1_COMPA_vect)
+{
+	SREG|=(1<<7);
+	PORTD^=(1<<4);
+}
+
+ISR(TIMER0_OVF_vect)
+{
+	contor++;
+	contor2++;
+	contor3++;
+}
+
+ISR(ADC_vect)
+{
+	ADCSRA|=(1<<ADSC);
+}
+void seg(int i)
+{
+
+	EEPROM_write(1000,(uint8_t)i);
+
+
+	if( i == 0 )
+	{
+		PORTD&=~(1<<3)&~(1<<5)&~(1<<7);
+		PORTB&=~(1<<0)&~(1<<1)&~(1<<2)&~(1<<3);
+
+		PORTD|=(1<<3)|(1<<5)|(1<<7);
+		PORTB|=(1<<1)|(1<<2)|(1<<3);
+	}
+
+	if( i == 1 )
+	{
+		PORTD&=~(1<<3)&~(1<<5)&~(1<<7);
+		PORTB&=~(1<<0)&~(1<<1)&~(1<<2)&~(1<<3);
+
+		PORTD|=(1<<3);
+		PORTB|=(1<<1);
+	}
+
+	if( i == 2 )
+	{
+		PORTD&=~(1<<3)&~(1<<5)&~(1<<7);
+		PORTB&=~(1<<0)&~(1<<1)&~(1<<2)&~(1<<3);
+
+		PORTD|=(1<<5)|(1<<7);
+		PORTB|=(1<<0)|(1<<1)|(1<<3);
+	}
+
+	if( i == 3 )
+	{
+		PORTD&=~(1<<3)&~(1<<5)&~(1<<7);
+		PORTB&=~(1<<0)&~(1<<1)&~(1<<2)&~(1<<3);
+
+		PORTD|=(1<<3)|(1<<5);
+		PORTB|=(1<<3)|(1<<1)|(1<<0);
+	}
+
+	if( i == 4 )
+	{
+		PORTD&=~(1<<3)&~(1<<5)&~(1<<7);
+		PORTB&=~(1<<0)&~(1<<1)&~(1<<2)&~(1<<3);
+
+		PORTD|=(1<<3);
+		PORTB|=(1<<0)|(1<<1)|(1<<2);
+	}
+
+	if( i == 5 )
+	{
+		PORTD&=~(1<<3)&~(1<<5)&~(1<<7);
+		PORTB&=~(1<<0)&~(1<<1)&~(1<<2)&~(1<<3);
+
+		PORTD|=(1<<3)|(1<<5);
+		PORTB|=(1<<3)|(1<<2)|(1<<0);
+	}
+
+	if( i == 6 )
+	{
+		PORTD&=~(1<<3)&~(1<<5)&~(1<<7);
+		PORTB&=~(1<<0)&~(1<<1)&~(1<<2)&~(1<<3);
+
+		PORTD|=(1<<3)|(1<<5)|(1<<7);
+		PORTB|=(1<<3)|(1<<2)|(1<<0);
+	}
+
+	if( i == 7 )
+	{
+		PORTD&=~(1<<3)&~(1<<5)&~(1<<7);
+		PORTB&=~(1<<0)&~(1<<1)&~(1<<2)&~(1<<3);
+
+		PORTD|=(1<<3);
+		PORTB|=(1<<3)|(1<<1);
+	}
+
+	if( i == 8 )
+	{
+		PORTD&=~(1<<3)&~(1<<5)&~(1<<7);
+		PORTB&=~(1<<0)&~(1<<1)&~(1<<2)&~(1<<3);
+
+		PORTD|=(1<<3)|(1<<5)|(1<<7);
+		PORTB|=(1<<0)|(1<<1)|(1<<2)|(1<<3);
+	}
+
+	if( i == 9 )
+	{
+		PORTD&=~(1<<3)&~(1<<5)&~(1<<7);
+		PORTB&=~(1<<0)&~(1<<1)&~(1<<2)&~(1<<3);
+
+		PORTD|=(1<<3)|(1<<5);
+		PORTB|=(1<<0)|(1<<1)|(1<<2)|(1<<3);
+	}
+}
+
+
+int main(void)
+{
+	DDRD = 0xFF;
+	DDRB = 0xDF;
+	DDRC = 0x00;
+	i=EEPROM_read(1000);
+	seg(i);
+
+	//////////////////// LED BLINK Timer1    ////////////////////////////
+	TCCR1B|=(1<<3); // wgm12 modul 0100 ctc cu top ocr1a
+	OCR1A=19000;
+	TIMSK1|=(1<<1); // are loc intreruperea la egalitate cu ocr1a
+	TCCR1B|=(1<<0)|(1<<2); // prescaler la 1024
+
+	SREG|=(1<<7); // enable global intr I bit
+	
+	////////////////////  /LED BLINK     //////////////////////////
+
+	//////////////////     PWM LED Timer0      //////////////////////////
+
+	TCCR0A|=(1<<7); // modul in care la inceput porneste pwn si la valoarea lui OC0A pe pinul D6
+	TCCR0A|=(1<<0)|(1<<1); // modul fast pwm
+	TIMSK0|=(1<<0); // overflow intr enable
+	TCCR0B|=(1<<0); // modul intrerupere fara clock
+	OCR0A=(procent/100.0)*255.0; // PWM 0 la inceput
+
+	SREG|=(1<<7);
+
+	//////////////////     /PWM LED      /////////////////////////
+
+	//////////////////     PWM Analog Input Timer2      ///////////////////////////
+
+	// AREF = AVcc
+	ADMUX = (1<<REFS0);
+	// ADC Enable and prescaler of 128
+	ADCSRA = (1<<ADEN)|(1<<ADPS2)|(1<<ADPS1)|(1<<ADPS0);
+
+	//////////////////     /PWM Analog Input Timer2      //////////////////////////
+
+	while (1)
+	{
+		//////////////////     PWM LED      //////////////////////////
+
+		OCR0A=(procent/100.0)*255.0;
+
+		if( fadeon == 0 && aux == 1 ) // aux e trigger pt o secunda
+		{
+			if( contor > 7000 )
+			{
+				procent+=10;
+				if(procent>100)
+				{
+					sw=1;
+					procent=100;
+				}
+
+				if(sw==1)
+				{
+					sw=0;
+					fadeon=1;
+					fadeof=0;
+					aux=0;
+				}
+				contor=0;
+			}
+		}
+
+		if( (sec <= 10 && aux == 0 && fadeon==1 && fadeof==0) || (sec <= 10 && aux == 0 && fadeon==0 && fadeof==1) )
+		{
+			if ( contor > 7000 )
+			{
+				sec++;
+				contor=0;
+			}
+		}
+		else
+		{
+			aux=1;
+			sec=0;
+		}
+
+
+		if( fadeof == 0 && aux == 1 )
+		{
+			if( contor > 7000 )
+			{
+				procent-=10;
+				if(procent<0)
+				{
+					sw=1;
+					procent=0;
+				}
+
+				if(sw==1)
+				{
+					sw=0;
+					fadeon=0;
+					fadeof=1;
+					aux=0;
+				}
+				contor=0;
+			}
+		}
+		//////////////////     /PWM LED      /////////////////////////
+
+		//////////////////     7 SEGMENT      ////////////////////////
+
+		if (var==0)
+		contor3=0;
+		var=1;
+
+		if (PINB & (1<<PB5))  // la apasare, afisez urmatoarea cifra
+		{
+
+			if( apasat==0 && modific==0 )
+			{
+				contor2=0;
+			}
+
+			modific=1;
+
+			if( contor2>35000 )
+			apasat=1;
+
+			if( contor3>180000)
+			{
+				i=-1;
+				seg(0);
+				var=0;
+			}
+
+			if ( apasat==1 && contor3 < 60000  ) // sa nu incrementeze in continuu daca e apasat
+			{
+				i++;
+				if(i>9)
+				i=0;
+				seg(i);
+				apasat=0;
+				modific=0;
+			}
+		}
+		else
+		{
+			var=0;
+		}
+		//////////////////     /7 SEGMENT      ///////////////////////
+		suma=0;
+		for(k=0;k<100;k++)
+		{
+			adc_result0 = adc_read(0);      // read adc value at PA0
+			suma+=adc_result0;
+		}
+		suma/=100;
+
+		float voltage = suma * 5.0;
+		voltage /= 1024.0;
+		float temperatureCelsius = (voltage - 0.5) * 100 ;
+
+		temp=(int)temperatureCelsius-7;
+
+	//			 seg(temp%10);
+		//		 delay_ms(4000);
+
+		//		 seg((temp/10)%10);
+		//		 delay_ms(4000);
+
+		
+
+		if( temp < 29 && temp > 22 )
+		{
+			PORTD|=(1<<2);
+		}
+		else
+		{
+			PORTD&=~(1<<2);
+		}
+
+	} // de la while
+}
